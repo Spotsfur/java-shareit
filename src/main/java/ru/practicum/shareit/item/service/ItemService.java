@@ -6,7 +6,7 @@ import java.util.List;
 
 public interface ItemService {
 
-    Item create (Item item, Long userId);
+    Item create(Item item, Long userId);
 
     List<Item> findAllByUserId(Long userId);
 
