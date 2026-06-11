@@ -17,6 +17,9 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User create(User user) {
+        if (user.getName() == null || user.getName().isBlank()) {
+            throw new ValidationException("Некорректное имя пользователя");
+        }
         if (user.getEmail() == null || user.getEmail().isBlank() || !user.getEmail().contains("@")) {
             throw new ValidationException("Некорректный email пользователя");
         }
@@ -55,7 +58,7 @@ public class UserServiceImpl implements UserService {
                 throw new ValidationException("Некорректный email пользователя");
             }
             boolean emailExists = storage.findAll().stream()
-                    .anyMatch(u -> u.getEmail().equalsIgnoreCase(user.getEmail()));
+                    .anyMatch(u -> !u.getId().equals(id) && u.getEmail().equalsIgnoreCase(user.getEmail()));
             if (emailExists) {
                 throw new ConflictException("Пользователь с таким email уже существует");
             }
@@ -63,7 +66,11 @@ public class UserServiceImpl implements UserService {
             user.setEmail(optionalUser.get().getEmail());
         }
 
-        if (user.getName() == null) {
+        if (user.getName() != null) {
+            if (user.getName().isBlank()) {
+                throw new ValidationException("Некорректное имя пользователя");
+            }
+        } else {
             user.setName(optionalUser.get().getName());
         }
         user.setId(id);
