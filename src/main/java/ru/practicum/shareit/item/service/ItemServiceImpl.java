@@ -2,28 +2,36 @@ package ru.practicum.shareit.item.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.shareit.booking.enums.BookingStatus;
+import ru.practicum.shareit.booking.repository.BookingRepository;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.exception.ValidationException;
+import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
-import ru.practicum.shareit.item.repository.ItemStorage;
+import ru.practicum.shareit.item.model.ItemInfo;
+import ru.practicum.shareit.item.repository.CommentRepository;
+import ru.practicum.shareit.item.repository.ItemRepository;
 import ru.practicum.shareit.user.model.User;
-import ru.practicum.shareit.user.repository.UserStorage;
+import ru.practicum.shareit.user.repository.UserRepository;
 
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class ItemServiceImpl implements ItemService {
-    private final ItemStorage storage;
-    private final UserStorage userStorage;
+    private final ItemRepository itemRepository;
+    private final UserRepository userRepository;
+    private final BookingRepository bookingRepository;
+    private final CommentRepository commentRepository;
 
     @Override
+    @Transactional
     public Item create(Item item, Long userId) {
-        Optional<User> optionalUser = userStorage.findOne(userId);
-        if (optionalUser.isEmpty()) {
-            throw new NotFoundException("Пользователь с id " + userId + " не найден");
-        }
+        User owner = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Пользователь с id " + userId + " не найден"));
         if (item.getAvailable() == null) {
             throw new ValidationException("Доступность предмета должна быть определена");
         }
@@ -33,61 +41,87 @@ public class ItemServiceImpl implements ItemService {
         if (item.getDescription() == null || item.getDescription().isBlank()) {
             throw new ValidationException("Описание предмета не может быть пустым");
         }
-        item.setOwner(optionalUser.get());
-        return storage.create(item);
+        item.setOwner(owner);
+        return itemRepository.save(item);
     }
 
     @Override
-    public List<Item> findAllByUserId(Long userId) {
-        Optional<User> optionalUser = userStorage.findOne(userId);
-        if (optionalUser.isEmpty()) {
+    public ItemInfo findOne(Long itemId) {
+        if (itemId == null) {
+            throw new ValidationException("id предмета должен быть передан");
+        }
+        Item item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new NotFoundException("Предмет с id " + itemId + " не найден"));
+
+        List<ru.practicum.shareit.booking.model.Booking> bookings =
+                bookingRepository.findByItemOwnerIdOrderByStartDesc(item.getOwner().getId());
+        List<Comment> comments = commentRepository.findByItemId(itemId);
+
+        return ItemInfo.builder()
+                .item(item)
+                .bookings(bookings)
+                .comments(comments)
+                .build();
+    }
+
+    @Override
+    public List<ItemInfo> findAllByUserId(Long userId) {
+        if (!userRepository.existsById(userId)) {
             throw new NotFoundException("Пользователь с id " + userId + " не найден");
         }
-        return storage.findAll().stream()
-                .filter(item -> item.getOwner() != null && item.getOwner().getId().equals(userId))
+
+        List<Item> items = itemRepository.findByOwnerId(userId);
+        List<ru.practicum.shareit.booking.model.Booking> allOwnerBookings =
+                bookingRepository.findByItemOwnerIdOrderByStartDesc(userId);
+
+        return items.stream()
+                .map(item -> ItemInfo.builder()
+                        .item(item)
+                        .bookings(allOwnerBookings)
+                        .comments(commentRepository.findByItemId(item.getId()))
+                        .build())
                 .toList();
+    }
+
+    @Override
+    @Transactional
+    public Comment createComment(Comment comment, Long itemId, Long userId) {
+        User author = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Пользователь с id " + userId + " не найден"));
+        Item item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new NotFoundException("Предмет с id " + itemId + " не найден"));
+
+        LocalDateTime now = LocalDateTime.now();
+        boolean hasBooked = bookingRepository.findByBookerIdAndEndBeforeOrderByStartDesc(userId, now).stream()
+                .anyMatch(b -> b.getItem().getId().equals(itemId) && b.getStatus() == BookingStatus.APPROVED);
+
+        if (!hasBooked) {
+            throw new ValidationException("Пользователь id " + userId + " не может оставить отзыв: " +
+                    "он не арендовал эту вещь или аренда ещё не завершилась");
+        }
+
+        comment.setAuthor(author);
+        comment.setItem(item);
+
+        return commentRepository.save(comment);
     }
 
     @Override
     public List<Item> findByText(String text, Long userId) {
-        Optional<User> optionalUser = userStorage.findOne(userId);
-        if (optionalUser.isEmpty()) {
+        if (!userRepository.existsById(userId)) {
             throw new NotFoundException("Пользователь с id " + userId + " не найден");
         }
-        //Не лезем в базу если строка пустая
         if (text == null || text.isBlank()) {
             return List.of();
         }
-        String lowerCaseText = text.toLowerCase();
-        return storage.findAll().stream()
-                .filter(item -> item.getAvailable() != null && item.getAvailable())
-                .filter(item -> {
-                    String name = item.getName() != null ? item.getName().toLowerCase() : "";
-                    String description = item.getDescription() != null ? item.getDescription().toLowerCase() : "";
-                    return name.contains(lowerCaseText) || description.contains(lowerCaseText);
-                })
-                .toList();
+        return itemRepository.search(text);
     }
 
     @Override
-    public Item findOne(Long itemId) {
-        if (itemId == null) {
-            throw new ValidationException("id предмета должен быть передан");
-        }
-        Optional<Item> optionalItem = storage.findOne(itemId);
-        if (optionalItem.isEmpty()) {
-            throw new NotFoundException("Предмет с id " + itemId + " не найден");
-        }
-        return optionalItem.get();
-    }
-
-    @Override
+    @Transactional
     public Item update(Item item, Long itemId, Long userId) {
-        Optional<Item> optionalItem = storage.findOne(itemId);
-        if (optionalItem.isEmpty()) {
-            throw new NotFoundException("Предмет с id " + itemId + " не найден");
-        }
-        Item oldItem = optionalItem.get();
+        Item oldItem = itemRepository.findById(itemId)
+                .orElseThrow(() -> new NotFoundException("Предмет с id " + itemId + " не найден"));
 
         if (!oldItem.getOwner().getId().equals(userId)) {
             throw new NotFoundException("Пользователь с id " + userId + " не является владельцем этого предмета");
@@ -107,7 +141,6 @@ public class ItemServiceImpl implements ItemService {
         if (item.getAvailable() != null) {
             oldItem.setAvailable(item.getAvailable());
         }
-        return storage.update(oldItem);
+        return itemRepository.save(oldItem);
     }
-
 }

@@ -1,21 +1,23 @@
 package ru.practicum.shareit.user.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.exception.ConflictException;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.user.model.User;
-import ru.practicum.shareit.user.repository.UserStorage;
-
-import java.util.Optional;
+import ru.practicum.shareit.user.repository.UserRepository;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class UserServiceImpl implements UserService {
-    private final UserStorage storage;
+    private final UserRepository repository;
 
     @Override
+    @Transactional
     public User create(User user) {
         if (user.getName() == null || user.getName().isBlank()) {
             throw new ValidationException("Некорректное имя пользователя");
@@ -23,12 +25,11 @@ public class UserServiceImpl implements UserService {
         if (user.getEmail() == null || user.getEmail().isBlank() || !user.getEmail().contains("@")) {
             throw new ValidationException("Некорректный email пользователя");
         }
-        boolean emailExists = storage.findAll().stream()
-                .anyMatch(u -> u.getEmail().equalsIgnoreCase(user.getEmail()));
-        if (emailExists) {
+        try {
+            return repository.save(user);
+        } catch (DataIntegrityViolationException e) {
             throw new ConflictException("Пользователь с таким email уже существует");
         }
-        return storage.create(user);
     }
 
     @Override
@@ -36,56 +37,50 @@ public class UserServiceImpl implements UserService {
         if (id == null) {
             throw new ValidationException("id пользователя должен быть передан");
         }
-        Optional<User> optionalUser = storage.findOne(id);
-        if (optionalUser.isEmpty()) {
-            throw new NotFoundException("Пользователь с id " + id + " не найден");
-        }
-        return optionalUser.get();
+        return repository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Пользователь с id " + id + " не найден"));
     }
 
     @Override
+    @Transactional
     public User update(User user, Long id) {
         if (id == null) {
             throw new ValidationException("id пользователя должен быть передан");
         }
-        Optional<User> optionalUser = storage.findOne(id);
-        if (optionalUser.isEmpty()) {
-            throw new NotFoundException("Пользователь с id " + id + " не найден");
-        }
+
+        User existingUser = repository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Пользователь с id " + id + " не найден"));
 
         if (user.getEmail() != null) {
             if (user.getEmail().isBlank() || !user.getEmail().contains("@")) {
                 throw new ValidationException("Некорректный email пользователя");
             }
-            boolean emailExists = storage.findAll().stream()
-                    .anyMatch(u -> !u.getId().equals(id) && u.getEmail().equalsIgnoreCase(user.getEmail()));
-            if (emailExists) {
-                throw new ConflictException("Пользователь с таким email уже существует");
-            }
-        } else {
-            user.setEmail(optionalUser.get().getEmail());
+            existingUser.setEmail(user.getEmail());
         }
 
         if (user.getName() != null) {
             if (user.getName().isBlank()) {
                 throw new ValidationException("Некорректное имя пользователя");
             }
-        } else {
-            user.setName(optionalUser.get().getName());
+            existingUser.setName(user.getName());
         }
-        user.setId(id);
-        return storage.update(user);
+
+        try {
+            return repository.save(existingUser);
+        } catch (DataIntegrityViolationException e) {
+            throw new ConflictException("Пользователь с таким email уже существует");
+        }
     }
 
     @Override
+    @Transactional
     public void delete(Long id) {
         if (id == null) {
             throw new ValidationException("id пользователя должен быть передан");
         }
-        Optional<User> optionalUser = storage.findOne(id);
-        if (optionalUser.isEmpty()) {
+        if (!repository.existsById(id)) {
             throw new NotFoundException("Пользователь с id " + id + " не найден");
         }
-        storage.delete(id);
+        repository.deleteById(id);
     }
 }
