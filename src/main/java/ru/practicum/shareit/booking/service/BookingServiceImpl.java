@@ -65,8 +65,8 @@ public class BookingServiceImpl implements BookingService {
             throw new ValidationException("Пользователь с id " + userId + " не является владельцем вещи");
         }
 
-        if (booking.getStatus() == BookingStatus.APPROVED) {
-            throw new ValidationException("Бронирование уже подтверждено");
+        if (booking.getStatus() != BookingStatus.WAITING) {
+            throw new ValidationException("Изменить статус можно только для бронирования в состоянии WAITING");
         }
 
         if (approved) {
@@ -103,7 +103,7 @@ public class BookingServiceImpl implements BookingService {
 
         return switch (convertToServerState(stateStr)) {
             case ALL -> bookingRepository.findByBookerIdOrderByStartDesc(userId);
-            case CURRENT -> bookingRepository.findByBookerIdAndStartBeforeAndEndAfterOrderByStartDesc(userId, now, now);
+            case CURRENT -> bookingRepository.findByBookerIdAndStartLessThanEqualAndEndGreaterThanOrderByStartDesc(userId, now, now);
             case PAST -> bookingRepository.findByBookerIdAndEndBeforeOrderByStartDesc(userId, now);
             case FUTURE -> bookingRepository.findByBookerIdAndStartAfterOrderByStartDesc(userId, now);
             case WAITING -> bookingRepository.findByBookerIdAndStatusOrderByStartDesc(userId, BookingStatus.WAITING);
@@ -123,7 +123,7 @@ public class BookingServiceImpl implements BookingService {
         return switch (convertToServerState(stateStr)) {
             case ALL -> bookingRepository.findByItemOwnerIdOrderByStartDesc(userId);
             case CURRENT ->
-                    bookingRepository.findByItemOwnerIdAndStartBeforeAndEndAfterOrderByStartDesc(userId, now, now);
+                    bookingRepository.findByItemOwnerIdAndStartLessThanEqualAndEndGreaterThanOrderByStartDesc(userId, now, now);
             case PAST -> bookingRepository.findByItemOwnerIdAndEndBeforeOrderByStartDesc(userId, now);
             case FUTURE -> bookingRepository.findByItemOwnerIdAndStartAfterOrderByStartDesc(userId, now);
             case WAITING -> bookingRepository.findByItemOwnerIdAndStatusOrderByStartDesc(userId, BookingStatus.WAITING);
@@ -137,7 +137,7 @@ public class BookingServiceImpl implements BookingService {
         try {
             return BookingState.valueOf(stateStr.toUpperCase());
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Unknown state: " + stateStr);
+            throw new ValidationException("Unknown state: " + stateStr);
         }
     }
 

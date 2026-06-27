@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.enums.BookingStatus;
+import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.repository.BookingRepository;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.exception.ValidationException;
@@ -53,8 +54,7 @@ public class ItemServiceImpl implements ItemService {
         Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new NotFoundException("Предмет с id " + itemId + " не найден"));
 
-        List<ru.practicum.shareit.booking.model.Booking> bookings =
-                bookingRepository.findByItemOwnerIdOrderByStartDesc(item.getOwner().getId());
+        List<Booking> bookings = bookingRepository.findByItemIdAndStatusOrderByStartDesc(itemId, BookingStatus.APPROVED);
         List<Comment> comments = commentRepository.findByItemId(itemId);
 
         return ItemInfo.builder()
@@ -71,17 +71,19 @@ public class ItemServiceImpl implements ItemService {
         }
 
         List<Item> items = itemRepository.findByOwnerId(userId);
-        List<ru.practicum.shareit.booking.model.Booking> allOwnerBookings =
-                bookingRepository.findByItemOwnerIdOrderByStartDesc(userId);
+
+        List<Long> itemIds = items.stream().map(Item::getId).toList();
+        List<Booking> allItemsBookings = bookingRepository.findByItemIdInAndStatusOrderByStartDesc(itemIds, BookingStatus.APPROVED);
 
         return items.stream()
                 .map(item -> ItemInfo.builder()
                         .item(item)
-                        .bookings(allOwnerBookings)
+                        .bookings(allItemsBookings)
                         .comments(commentRepository.findByItemId(item.getId()))
                         .build())
                 .toList();
     }
+
 
     @Override
     @Transactional

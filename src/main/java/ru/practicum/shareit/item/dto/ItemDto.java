@@ -26,5 +26,7 @@ public class ItemDto {
     public static class ShortBookingDto {
         private Long id;
         private Long bookerId;
+        private java.time.LocalDateTime start;
+        private java.time.LocalDateTime end;
     }
 }

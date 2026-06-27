@@ -65,6 +65,8 @@ public class ItemMapper {
                     .ifPresent(last -> dto.setLastBooking(ItemDto.ShortBookingDto.builder()
                             .id(last.getId())
                             .bookerId(last.getBooker().getId())
+                            .start(last.getStart())
+                            .end(last.getEnd())
                             .build()));
 
             info.getBookings().stream()
@@ -75,6 +77,8 @@ public class ItemMapper {
                     .ifPresent(next -> dto.setNextBooking(ItemDto.ShortBookingDto.builder()
                             .id(next.getId())
                             .bookerId(next.getBooker().getId())
+                            .start(next.getStart())
+                            .end(next.getEnd())
                             .build()));
         }
         return dto;
