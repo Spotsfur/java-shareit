@@ -54,12 +54,22 @@ public class ItemServiceImpl implements ItemService {
         Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new NotFoundException("Предмет с id " + itemId + " не найден"));
 
-        List<Booking> bookings = bookingRepository.findByItemIdAndStatusOrderByStartDesc(itemId, BookingStatus.APPROVED);
+        LocalDateTime now = LocalDateTime.now();
+
+        Booking lastBooking = bookingRepository
+                .findByItemIdAndStatusAndStartLessThanEqualAndEndGreaterThanEqualOrderByEndDesc(itemId, BookingStatus.APPROVED, now, now)
+                .stream().findFirst().orElse(null);
+
+        Booking nextBooking = bookingRepository
+                .findByItemIdAndStatusAndStartAfterOrderByStartAsc(itemId, BookingStatus.APPROVED, now)
+                .stream().findFirst().orElse(null);
+
         List<Comment> comments = commentRepository.findByItemId(itemId);
 
         return ItemInfo.builder()
                 .item(item)
-                .bookings(bookings)
+                .lastBooking(lastBooking)
+                .nextBooking(nextBooking)
                 .comments(comments)
                 .build();
     }
@@ -71,16 +81,25 @@ public class ItemServiceImpl implements ItemService {
         }
 
         List<Item> items = itemRepository.findByOwnerId(userId);
-
-        List<Long> itemIds = items.stream().map(Item::getId).toList();
-        List<Booking> allItemsBookings = bookingRepository.findByItemIdInAndStatusOrderByStartDesc(itemIds, BookingStatus.APPROVED);
+        LocalDateTime now = LocalDateTime.now();
 
         return items.stream()
-                .map(item -> ItemInfo.builder()
-                        .item(item)
-                        .bookings(allItemsBookings)
-                        .comments(commentRepository.findByItemId(item.getId()))
-                        .build())
+                .map(item -> {
+                    Booking last = bookingRepository
+                            .findByItemIdAndStatusAndStartLessThanEqualAndEndGreaterThanEqualOrderByEndDesc(item.getId(), BookingStatus.APPROVED, now, now)
+                            .stream().findFirst().orElse(null);
+
+                    Booking next = bookingRepository
+                            .findByItemIdAndStatusAndStartAfterOrderByStartAsc(item.getId(), BookingStatus.APPROVED, now)
+                            .stream().findFirst().orElse(null);
+
+                    return ItemInfo.builder()
+                            .item(item)
+                            .lastBooking(last)
+                            .nextBooking(next)
+                            .comments(commentRepository.findByItemId(item.getId()))
+                            .build();
+                })
                 .toList();
     }
 

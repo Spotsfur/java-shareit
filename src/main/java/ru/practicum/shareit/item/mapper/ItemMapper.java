@@ -44,7 +44,7 @@ public class ItemMapper {
         }
 
         Item item = info.getItem();
-        ItemDto dto = toItemDto(item);
+        ItemDto dto = toItemDto(item); // Мапим базовые поля
 
         if (info.getComments() != null) {
             dto.setComments(info.getComments().stream()
@@ -54,33 +54,27 @@ public class ItemMapper {
             dto.setComments(List.of());
         }
 
-        if (item.getOwner() != null && item.getOwner().getId().equals(userId) && info.getBookings() != null) {
-            java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        if (item.getOwner() != null && item.getOwner().getId().equals(userId)) {
 
-            info.getBookings().stream()
-                    .filter(b -> b.getItem().getId().equals(item.getId()))
-                    .filter(b -> b.getStatus() == ru.practicum.shareit.booking.enums.BookingStatus.APPROVED)
-                    .filter(b -> b.getStart().isBefore(now))
-                    .max(java.util.Comparator.comparing(Booking::getEnd))
-                    .ifPresent(last -> dto.setLastBooking(ItemDto.ShortBookingDto.builder()
-                            .id(last.getId())
-                            .bookerId(last.getBooker().getId())
-                            .start(last.getStart())
-                            .end(last.getEnd())
-                            .build()));
+            if (info.getLastBooking() != null) {
+                dto.setLastBooking(ItemDto.ShortBookingDto.builder()
+                        .id(info.getLastBooking().getId())
+                        .bookerId(info.getLastBooking().getBooker().getId())
+                        .start(info.getLastBooking().getStart()) // Даты для ревьюера!
+                        .end(info.getLastBooking().getEnd())
+                        .build());
+            }
 
-            info.getBookings().stream()
-                    .filter(b -> b.getItem().getId().equals(item.getId()))
-                    .filter(b -> b.getStatus() == ru.practicum.shareit.booking.enums.BookingStatus.APPROVED)
-                    .filter(b -> b.getStart().isAfter(now))
-                    .min(java.util.Comparator.comparing(Booking::getStart))
-                    .ifPresent(next -> dto.setNextBooking(ItemDto.ShortBookingDto.builder()
-                            .id(next.getId())
-                            .bookerId(next.getBooker().getId())
-                            .start(next.getStart())
-                            .end(next.getEnd())
-                            .build()));
+            if (info.getNextBooking() != null) {
+                dto.setNextBooking(ItemDto.ShortBookingDto.builder()
+                        .id(info.getNextBooking().getId())
+                        .bookerId(info.getNextBooking().getBooker().getId())
+                        .start(info.getNextBooking().getStart()) // Даты для ревьюера!
+                        .end(info.getNextBooking().getEnd())
+                        .build());
+            }
         }
         return dto;
     }
+
 }

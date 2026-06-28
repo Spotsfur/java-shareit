@@ -3,6 +3,7 @@ package ru.practicum.shareit.item.model;
 import lombok.Builder;
 import lombok.Data;
 import ru.practicum.shareit.booking.model.Booking;
+
 import java.util.List;
 
 //Так как я делал маппинг в контроллерах, приходится из сервиса передавать этот промежуточный компонент
@@ -10,6 +11,7 @@ import java.util.List;
 @Builder
 public class ItemInfo {
     private Item item;
-    private List<Booking> bookings;
+    private Booking lastBooking;
+    private Booking nextBooking;
     private List<Comment> comments;
 }
