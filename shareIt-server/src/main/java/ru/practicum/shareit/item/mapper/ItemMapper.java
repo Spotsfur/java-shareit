@@ -37,9 +37,6 @@ public class ItemMapper {
                 .build();
     }
 
-    //Из-за того, что на этапе проектирования я решил что маппить DTO и обратно я буду в контроллере,
-    //у меня возникла сложность, при которой я должен был донести полные данные до контроллера.
-    //Но мой сервис не знает про DTO, потому работаю в промежуточном ItemInfo
     public static ItemDto toItemDto(ItemInfo info, Long userId) {
         if (info == null) {
             return null;
