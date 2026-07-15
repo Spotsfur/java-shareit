@@ -15,7 +15,6 @@ import ru.practicum.shareit.booking.dto.BookingIncomingDto;
 
 import java.time.LocalDateTime;
 
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
