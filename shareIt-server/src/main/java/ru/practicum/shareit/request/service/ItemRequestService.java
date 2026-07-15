@@ -4,7 +4,6 @@ import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.request.model.ItemRequest;
 
 import java.util.List;
-import java.util.Map;
 
 public interface ItemRequestService {
     ItemRequest create(ItemRequest request, Long userId);
