@@ -7,8 +7,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import ru.practicum.shareit.exception.NotFoundException;
-import ru.practicum.shareit.exception.ValidationException;
-import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.request.repository.ItemRequestRepository;
 import ru.practicum.shareit.request.service.ItemRequestServiceImpl;
 import ru.practicum.shareit.user.repository.UserRepository;
@@ -27,12 +25,6 @@ class ItemRequestServiceImplUnitTest {
     private ItemRequestRepository requestRepository;
     @Mock
     private UserRepository userRepository;
-
-    @Test
-    void create_whenDescriptionNull_shouldThrowValidationException() {
-        ItemRequest request = new ItemRequest();
-        assertThrows(ValidationException.class, () -> requestService.create(request, 1L));
-    }
 
     @Test
     void findOne_whenRequestNotFound_shouldThrowNotFoundException() {

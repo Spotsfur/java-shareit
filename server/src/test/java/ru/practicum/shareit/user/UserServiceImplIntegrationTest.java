@@ -8,7 +8,6 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.exception.ConflictException;
 import ru.practicum.shareit.exception.NotFoundException;
-import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.service.UserService;
 
@@ -47,13 +46,6 @@ class UserServiceImplIntegrationTest {
         assertThat(fromDb).isPresent();
         assertThat(fromDb.get().getName()).isEqualTo("Интеграционный Тест");
         assertThat(fromDb.get().getEmail()).isEqualTo("integration@yandex.ru");
-    }
-
-    @Test
-    void create_whenEmailIsInvalid_shouldThrowValidationException() {
-        user.setEmail("invalid-email");
-
-        assertThrows(ValidationException.class, () -> userService.create(user));
     }
 
     @Test
@@ -107,4 +99,40 @@ class UserServiceImplIntegrationTest {
 
         assertThrows(NotFoundException.class, () -> userService.findOne(savedUser.getId()));
     }
+
+    @Test
+    void update_whenEmailDuplicate_shouldThrowConflictException() {
+        User first = new User();
+        first.setName("Первый");
+        first.setEmail("first@test.ru");
+        userService.create(first);
+
+        User second = new User();
+        second.setName("Второй");
+        second.setEmail("second@test.ru");
+        User savedSecond = userService.create(second);
+
+        User updateData = new User();
+        updateData.setEmail("first@test.ru");
+
+        assertThrows(ConflictException.class, () -> userService.update(updateData, savedSecond.getId()));
+
+        /*User second = new User();
+        second.setName("Другое имя");
+        second.setEmail("another@yandex.ru");
+        User savedSecond = userService.create(second);
+
+        User updateData = new User();
+        updateData.setEmail("integration@yandex.ru");
+
+        assertThrows(ConflictException.class, () -> userService.update(updateData, savedSecond.getId()));*/
+    }
+
+    @Test
+    void delete_whenUserDoesNotExist_shouldThrowNotFoundException() {
+        Long nonExistingId = 999L;
+
+        assertThrows(NotFoundException.class, () -> userService.delete(nonExistingId));
+    }
+
 }

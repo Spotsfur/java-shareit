@@ -17,7 +17,6 @@ import ru.practicum.shareit.item.repository.ItemRepository;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
 
-import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -34,27 +33,6 @@ class BookingServiceImplUnitTest {
     private UserRepository userRepository;
     @Mock
     private ItemRepository itemRepository;
-
-    @Test
-    void create_whenDatesNull_shouldThrowValidationException() {
-        Mockito.when(userRepository.findById(1L)).thenReturn(Optional.of(new User()));
-        Mockito.when(itemRepository.findById(10L)).thenReturn(Optional.of(new Item()));
-
-        Booking booking = new Booking();
-        assertThrows(ValidationException.class, () -> bookingService.create(booking, 10L, 1L));
-    }
-
-    @Test
-    void create_whenEndBeforeStart_shouldThrowValidationException() {
-        Mockito.when(userRepository.findById(1L)).thenReturn(Optional.of(new User()));
-        Mockito.when(itemRepository.findById(10L)).thenReturn(Optional.of(new Item()));
-
-        Booking booking = new Booking();
-        booking.setStart(LocalDateTime.now().plusDays(2));
-        booking.setEnd(LocalDateTime.now().plusDays(1));
-
-        assertThrows(ValidationException.class, () -> bookingService.create(booking, 10L, 1L));
-    }
 
     @Test
     void approve_whenBookingNotFound_shouldThrowNotFoundException() {

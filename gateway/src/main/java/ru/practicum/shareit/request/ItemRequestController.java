@@ -1,6 +1,7 @@
 package ru.practicum.shareit.request;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -18,26 +19,26 @@ public class ItemRequestController {
 
     @PostMapping
     public ResponseEntity<Object> create(@Valid @RequestBody ItemRequestDto dto,
-                                         @RequestHeader(USER_ID_HEADER) Long userId) {
+                                         @RequestHeader(USER_ID_HEADER) @NotNull(message = "id пользователя должен быть передан") Long userId) {
         log.info("Gateway: Создание запроса вещи пользователем id={}", userId);
         return requestClient.createRequest(userId, dto);
     }
 
     @GetMapping
-    public ResponseEntity<Object> findAllByUserId(@RequestHeader(USER_ID_HEADER) Long userId) {
+    public ResponseEntity<Object> findAllByUserId(@RequestHeader(USER_ID_HEADER) @NotNull(message = "id пользователя должен быть передан") Long userId) {
         log.info("Gateway: Получение своих запросов пользователем id={}", userId);
         return requestClient.getOwnRequests(userId);
     }
 
     @GetMapping("/all")
-    public ResponseEntity<Object> findAllOfOthers(@RequestHeader(USER_ID_HEADER) Long userId) {
+    public ResponseEntity<Object> findAllOfOthers(@RequestHeader(USER_ID_HEADER) @NotNull(message = "id пользователя должен быть передан") Long userId) {
         log.info("Gateway: Получение чужих запросов пользователем id={}", userId);
         return requestClient.getAllRequestsOfOthers(userId);
     }
 
     @GetMapping("/{requestId}")
-    public ResponseEntity<Object> findOne(@PathVariable Long requestId,
-                                          @RequestHeader(USER_ID_HEADER) Long userId) {
+    public ResponseEntity<Object> findOne(@PathVariable @NotNull(message = "id запроса должен быть передан") Long requestId,
+                                          @RequestHeader(USER_ID_HEADER) @NotNull(message = "id пользователя должен быть передан") Long userId) {
         log.info("Gateway: Получение запроса id={} пользователем id={}", requestId, userId);
         return requestClient.getRequestById(requestId, userId);
     }

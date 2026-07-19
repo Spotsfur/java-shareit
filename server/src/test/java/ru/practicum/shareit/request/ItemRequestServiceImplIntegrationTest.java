@@ -7,7 +7,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.exception.NotFoundException;
-import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repository.ItemRepository;
 import ru.practicum.shareit.request.model.ItemRequest;
@@ -68,14 +67,6 @@ class ItemRequestServiceImplIntegrationTest {
     void create_whenUserDoesNotExist_shouldThrowNotFoundException() {
         assertThrows(NotFoundException.class, () ->
                 requestService.create(itemRequest, 999L));
-    }
-
-    @Test
-    void create_whenDescriptionIsEmpty_shouldThrowValidationException() {
-        itemRequest.setDescription("");
-
-        assertThrows(ValidationException.class, () ->
-                requestService.create(itemRequest, requestor.getId()));
     }
 
     @Test

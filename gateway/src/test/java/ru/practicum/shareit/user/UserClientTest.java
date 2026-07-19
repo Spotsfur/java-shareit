@@ -12,6 +12,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestTemplate;
 import ru.practicum.shareit.user.dto.UserDto;
+import ru.practicum.shareit.user.dto.UserUpdateDto;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.*;
@@ -70,13 +71,20 @@ class UserClientTest {
 
     @Test
     void updateUser_shouldSendPatchRequestAndReturnOk() throws Exception {
-        String jsonDto = objectMapper.writeValueAsString(userDto);
+        UserUpdateDto updateDto = UserUpdateDto.builder()
+                .name(userDto.getName())
+                .email(userDto.getEmail())
+                .build();
+
+        String jsonRequest = objectMapper.writeValueAsString(updateDto);
+        String jsonResponse = objectMapper.writeValueAsString(userDto);
 
         mockServer.expect(requestTo("http://localhost:9090/users/1"))
                 .andExpect(method(HttpMethod.PATCH))
-                .andRespond(withSuccess(jsonDto, MediaType.APPLICATION_JSON));
+                .andExpect(content().json(jsonRequest))
+                .andRespond(withSuccess(jsonResponse, MediaType.APPLICATION_JSON));
 
-        ResponseEntity<Object> response = userClient.updateUser(userDto, 1L);
+        ResponseEntity<Object> response = userClient.updateUser(updateDto, 1L);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         mockServer.verify();

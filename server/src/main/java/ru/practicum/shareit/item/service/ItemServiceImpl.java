@@ -36,15 +36,6 @@ public class ItemServiceImpl implements ItemService {
     public Item create(Item item, Long userId) {
         User owner = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id " + userId + " не найден"));
-        if (item.getAvailable() == null) {
-            throw new ValidationException("Доступность предмета должна быть определена");
-        }
-        if (item.getName() == null || item.getName().isBlank()) {
-            throw new ValidationException("Название предмета не может быть пустым");
-        }
-        if (item.getDescription() == null || item.getDescription().isBlank()) {
-            throw new ValidationException("Описание предмета не может быть пустым");
-        }
         if (item.getRequest() != null && item.getRequest().getId() != null) {
             Long requestId = item.getRequest().getId();
             ItemRequest request = requestRepository.findById(requestId)
@@ -57,9 +48,6 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public ItemInfo findOne(Long itemId) {
-        if (itemId == null) {
-            throw new ValidationException("id предмета должен быть передан");
-        }
         Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new NotFoundException("Предмет с id " + itemId + " не найден"));
 
@@ -157,15 +145,9 @@ public class ItemServiceImpl implements ItemService {
             throw new NotFoundException("Пользователь с id " + userId + " не является владельцем этого предмета");
         }
         if (item.getName() != null) {
-            if (item.getName().isBlank()) {
-                throw new ValidationException("Название предмета не может быть пустым");
-            }
             oldItem.setName(item.getName());
         }
         if (item.getDescription() != null) {
-            if (item.getDescription().isBlank()) {
-                throw new ValidationException("Описание предмета не может быть пустым");
-            }
             oldItem.setDescription(item.getDescription());
         }
         if (item.getAvailable() != null) {

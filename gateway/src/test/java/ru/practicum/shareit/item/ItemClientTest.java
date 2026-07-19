@@ -13,6 +13,7 @@ import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestTemplate;
 import ru.practicum.shareit.item.dto.CommentIncomingDto;
 import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.dto.ItemUpdateDto;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.*;
@@ -103,15 +104,22 @@ class ItemClientTest {
 
     @Test
     void updateItem_shouldSendPatchRequestAndReturnOk() throws Exception {
-        String jsonDto = objectMapper.writeValueAsString(itemDto);
+        ItemUpdateDto updateDto = ItemUpdateDto.builder()
+                .name(itemDto.getName())
+                .description(itemDto.getDescription())
+                .available(itemDto.getAvailable())
+                .build();
+
+        String jsonRequest = objectMapper.writeValueAsString(updateDto);
+        String jsonResponse = objectMapper.writeValueAsString(itemDto);
 
         mockServer.expect(requestTo(BASE_URL + "/1"))
                 .andExpect(method(HttpMethod.PATCH))
                 .andExpect(header("X-Sharer-User-Id", "1"))
-                .andExpect(content().json(jsonDto))
-                .andRespond(withSuccess(jsonDto, MediaType.APPLICATION_JSON));
+                .andExpect(content().json(jsonRequest))
+                .andRespond(withSuccess(jsonResponse, MediaType.APPLICATION_JSON));
 
-        ResponseEntity<Object> response = itemClient.updateItem(1L, 1L, itemDto);
+        ResponseEntity<Object> response = itemClient.updateItem(1L, 1L, updateDto);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         mockServer.verify();

@@ -27,9 +27,6 @@ public class ItemRequestServiceImpl implements ItemRequestService {
     @Override
     @Transactional
     public ItemRequest create(ItemRequest request, Long userId) {
-        if (request.getDescription() == null || request.getDescription().isBlank()) {
-            throw new ru.practicum.shareit.exception.ValidationException("Описание запроса не может быть пустым");
-        }
         User requestor = checkUserExists(userId);
         request.setRequestor(requestor);
         request.setCreated(LocalDateTime.now());

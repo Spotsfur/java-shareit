@@ -8,6 +8,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.enums.BookingStatus;
 import ru.practicum.shareit.booking.model.Booking;
+import ru.practicum.shareit.booking.repository.BookingRepository;
 import ru.practicum.shareit.booking.service.BookingService;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.exception.ValidationException;
@@ -29,6 +30,9 @@ class BookingServiceImplIntegrationTest {
 
     @Autowired
     private BookingService bookingService;
+
+    @Autowired
+    private BookingRepository bookingRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -152,4 +156,75 @@ class BookingServiceImplIntegrationTest {
         List<Booking> allBookings = bookingService.findAllByOwner(owner.getId(), "ALL");
         assertThat(allBookings).hasSize(1);
     }
+
+    @Test
+    void approve_whenApprovedFalse_shouldChangeStatusToRejected() {
+        Booking saved = bookingService.create(booking, item.getId(), booker.getId());
+
+        Booking rejected = bookingService.approve(saved.getId(), owner.getId(), false);
+
+        assertThat(rejected.getStatus()).isEqualTo(BookingStatus.REJECTED);
+    }
+
+    @Test
+    void findAllByBooker_whenUserDoesNotExist_shouldThrowNotFoundException() {
+        assertThrows(NotFoundException.class, () ->
+                bookingService.findAllByBooker(999L, "ALL"));
+    }
+
+    @Test
+    void findAllByOwner_whenUserDoesNotExist_shouldThrowNotFoundException() {
+        assertThrows(NotFoundException.class, () ->
+                bookingService.findAllByOwner(999L, "ALL"));
+    }
+
+    @Test
+    void findAllByBooker_shouldCoverRemainingStates() {
+        Booking saved = bookingService.create(booking, item.getId(), booker.getId());
+
+        bookingService.approve(saved.getId(), owner.getId(), false);
+        List<Booking> rejectedBookings = bookingService.findAllByBooker(booker.getId(), "REJECTED");
+        assertThat(rejectedBookings).hasSize(1);
+
+        Booking pastBooking = new Booking();
+        pastBooking.setStart(LocalDateTime.now().minusDays(5));
+        pastBooking.setEnd(LocalDateTime.now().minusDays(2));
+        pastBooking.setItem(item);
+        pastBooking.setBooker(booker);
+        pastBooking.setStatus(BookingStatus.APPROVED);
+        bookingRepository.save(pastBooking);
+
+        Booking currentBooking = new Booking();
+        currentBooking.setStart(LocalDateTime.now().minusDays(1));
+        currentBooking.setEnd(LocalDateTime.now().plusDays(1));
+        currentBooking.setItem(item);
+        currentBooking.setBooker(booker);
+        currentBooking.setStatus(BookingStatus.APPROVED);
+        bookingRepository.save(currentBooking);
+
+        List<Booking> pastBookings = bookingService.findAllByBooker(booker.getId(), "PAST");
+        List<Booking> currentBookings = bookingService.findAllByBooker(booker.getId(), "CURRENT");
+        assertThat(pastBookings).hasSize(1);
+        assertThat(currentBookings).hasSize(1);
+    }
+
+    @Test
+    void findAllByOwner_shouldCoverRemainingStates() {
+        Booking saved = bookingService.create(booking, item.getId(), booker.getId());
+
+        List<Booking> futureBookings = bookingService.findAllByOwner(owner.getId(), "FUTURE");
+        List<Booking> waitingBookings = bookingService.findAllByOwner(owner.getId(), "WAITING");
+        assertThat(futureBookings).hasSize(1);
+        assertThat(waitingBookings).hasSize(1);
+
+        bookingService.approve(saved.getId(), owner.getId(), false);
+        List<Booking> rejectedBookings = bookingService.findAllByOwner(owner.getId(), "REJECTED");
+        assertThat(rejectedBookings).hasSize(1);
+
+        Booking pastBooking = new Booking(); pastBooking.setStart(LocalDateTime.now().minusDays(5)); pastBooking.setEnd(LocalDateTime.now().minusDays(2)); pastBooking.setItem(item); pastBooking.setBooker(booker); pastBooking.setStatus(BookingStatus.APPROVED);
+        bookingRepository.save(pastBooking);
+        List<Booking> pastBookings = bookingService.findAllByOwner(owner.getId(), "PAST");
+        assertThat(pastBookings).hasSize(1);
+    }
+
 }

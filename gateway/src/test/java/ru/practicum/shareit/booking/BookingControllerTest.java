@@ -114,4 +114,62 @@ class BookingControllerTest {
                         .param("state", "INVALID_STATE"))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    void create_whenStartIsNull_shouldReturnBadRequest() throws Exception {
+        validDto.setStart(null);
+
+        mockMvc.perform(post("/bookings")
+                        .header(USER_ID_HEADER, 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(validDto)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void create_whenEndIsNull_shouldReturnBadRequest() throws Exception {
+        validDto.setEnd(null);
+
+        mockMvc.perform(post("/bookings")
+                        .header(USER_ID_HEADER, 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(validDto)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void create_whenEndIsBeforeStart_shouldReturnBadRequest() throws Exception {
+        validDto.setStart(LocalDateTime.now().plusDays(5));
+        validDto.setEnd(LocalDateTime.now().plusDays(2));
+
+        mockMvc.perform(post("/bookings")
+                        .header(USER_ID_HEADER, 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(validDto)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void create_whenStartInPast_shouldReturnBadRequest() throws Exception {
+        validDto.setStart(LocalDateTime.now().minusDays(5));
+        validDto.setEnd(LocalDateTime.now().plusDays(2));
+
+        mockMvc.perform(post("/bookings")
+                        .header(USER_ID_HEADER, 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(validDto)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void create_whenItemIdIsNull_shouldReturnBadRequest() throws Exception {
+        validDto.setItemId(null);
+
+        mockMvc.perform(post("/bookings")
+                        .header(USER_ID_HEADER, 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(validDto)))
+                .andExpect(status().isBadRequest());
+    }
+
 }

@@ -12,6 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
 import ru.practicum.shareit.user.dto.UserDto;
+import ru.practicum.shareit.user.dto.UserUpdateDto;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -89,12 +90,17 @@ class UserControllerTest {
 
     @Test
     void update_shouldReturnStatusOk() throws Exception {
-        Mockito.when(userClient.updateUser(any(UserDto.class), eq(1L)))
+        UserUpdateDto updateDto = UserUpdateDto.builder()
+                .name(validUserDto.getName())
+                .email(validUserDto.getEmail())
+                .build();
+
+        Mockito.when(userClient.updateUser(any(UserUpdateDto.class), eq(1L)))
                 .thenReturn(new ResponseEntity<>(validUserDto, HttpStatus.OK));
 
         mockMvc.perform(patch("/users/{userId}", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(validUserDto)))
+                        .content(objectMapper.writeValueAsString(updateDto)))
                 .andExpect(status().isOk());
     }
 

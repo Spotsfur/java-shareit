@@ -1,6 +1,8 @@
 package ru.practicum.shareit.item.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 
@@ -14,8 +16,11 @@ import java.util.List;
 @Builder
 public class ItemDto {
     private Long id;
+    @NotBlank(message = "Название предмета не может быть пустым")
     private String name;
+    @NotBlank(message = "Описание предмета не может быть пустым")
     private String description;
+    @NotNull(message = "Доступность предмета должна быть определена")
     private Boolean available;
     //Постман валится без этой аннотации
     @JsonProperty("requestId")

@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
 import ru.practicum.shareit.item.dto.CommentIncomingDto;
 import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.dto.ItemUpdateDto;
 
 import java.util.List;
 
@@ -91,13 +92,19 @@ class ItemControllerTest {
 
     @Test
     void update_shouldReturnStatusOk() throws Exception {
-        Mockito.when(itemClient.updateItem(eq(1L), eq(1L), any(ItemDto.class)))
+        ItemUpdateDto updateDto = ItemUpdateDto.builder()
+                .name(validItemDto.getName())
+                .description(validItemDto.getDescription())
+                .available(validItemDto.getAvailable())
+                .build();
+
+        Mockito.when(itemClient.updateItem(eq(1L), eq(1L), any(ItemUpdateDto.class)))
                 .thenReturn(new ResponseEntity<>(validItemDto, HttpStatus.OK));
 
         mockMvc.perform(patch("/items/{itemId}", 1L)
                         .header(USER_ID_HEADER, 1L)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(validItemDto)))
+                        .content(objectMapper.writeValueAsString(updateDto)))
                 .andExpect(status().isOk());
     }
 

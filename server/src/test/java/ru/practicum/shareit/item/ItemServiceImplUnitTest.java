@@ -7,7 +7,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import ru.practicum.shareit.exception.NotFoundException;
-import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repository.ItemRepository;
 import ru.practicum.shareit.item.service.ItemServiceImpl;
@@ -44,32 +43,6 @@ class ItemServiceImplUnitTest {
     }
 
     @Test
-    void create_whenAvailableIsNull_shouldThrowValidationException() {
-        Mockito.when(userRepository.findById(1L)).thenReturn(Optional.of(new User()));
-        Item item = new Item();
-        assertThrows(ValidationException.class, () -> itemService.create(item, 1L));
-    }
-
-    @Test
-    void create_whenNameIsEmpty_shouldThrowValidationException() {
-        Mockito.when(userRepository.findById(1L)).thenReturn(Optional.of(new User()));
-        Item item = new Item();
-        item.setAvailable(true);
-        item.setName("");
-        assertThrows(ValidationException.class, () -> itemService.create(item, 1L));
-    }
-
-    @Test
-    void create_whenDescriptionIsEmpty_shouldThrowValidationException() {
-        Mockito.when(userRepository.findById(1L)).thenReturn(Optional.of(new User()));
-        Item item = new Item();
-        item.setAvailable(true);
-        item.setName("Дрель");
-        item.setDescription("  ");
-        assertThrows(ValidationException.class, () -> itemService.create(item, 1L));
-    }
-
-    @Test
     void create_whenRequestNotFound_shouldThrowNotFoundException() {
         Mockito.when(userRepository.findById(1L)).thenReturn(Optional.of(new User()));
 
@@ -84,11 +57,6 @@ class ItemServiceImplUnitTest {
         Mockito.when(requestRepository.findById(100L)).thenReturn(Optional.empty());
 
         assertThrows(NotFoundException.class, () -> itemService.create(item, 1L));
-    }
-
-    @Test
-    void findOne_whenIdIsNull_shouldThrowValidationException() {
-        assertThrows(ValidationException.class, () -> itemService.findOne(null));
     }
 
     @Test
@@ -114,37 +82,5 @@ class ItemServiceImplUnitTest {
         updateData.setName("Новое имя");
 
         assertThrows(NotFoundException.class, () -> itemService.update(updateData, 10L, 2L));
-    }
-
-    @Test
-    void update_whenNameIsBlankOnUpdate_shouldThrowValidationException() {
-        User owner = new User();
-        owner.setId(1L);
-        Item existingItem = new Item();
-        existingItem.setId(10L);
-        existingItem.setOwner(owner);
-
-        Mockito.when(itemRepository.findById(10L)).thenReturn(Optional.of(existingItem));
-
-        Item updateData = new Item();
-        updateData.setName("");
-
-        assertThrows(ValidationException.class, () -> itemService.update(updateData, 10L, 1L));
-    }
-
-    @Test
-    void update_whenDescriptionIsBlankOnUpdate_shouldThrowValidationException() {
-        User owner = new User();
-        owner.setId(1L);
-        Item existingItem = new Item();
-        existingItem.setId(10L);
-        existingItem.setOwner(owner);
-
-        Mockito.when(itemRepository.findById(10L)).thenReturn(Optional.of(existingItem));
-
-        Item updateData = new Item();
-        updateData.setDescription("   ");
-
-        assertThrows(ValidationException.class, () -> itemService.update(updateData, 10L, 1L));
     }
 }

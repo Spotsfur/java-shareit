@@ -1,5 +1,6 @@
 package ru.practicum.shareit.booking.dto;
 
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotNull;
@@ -19,4 +20,12 @@ public class BookingIncomingDto {
     @NotNull(message = "Дата окончания бронирования не может быть пустой")
     @Future(message = "Дата окончания бронирования должна быть в будущем")
     private LocalDateTime end;
+
+    @AssertTrue(message = "Время окончания бронирования должно быть позже времени начала")
+    public boolean isBookingDatesValid() {
+        if (start == null || end == null) {
+            return false;
+        }
+        return start.isBefore(end);
+    }
 }
